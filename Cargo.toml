@@ -1,0 +1,11 @@
+[package]
+name = "unirapui"
+version = "0.1.0"
+authors = ["Ville Orkas <ville@orkas.fi>"]
+edition = "2018"
+
+[dependencies]
+jni = "*"
+
+[lib]
+crate-type = ["cdylib"]
