@@ -38,15 +38,11 @@ android {
     ndkVersion '22.1.7171670'
 }
 
-apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
+apply plugin: 'com.github.willir.rust.cargo-ndk-android'
 
-cargo {
+cargoNdk {
     module = "../../"
-    targets = ["arm", "x86", "x86_64", "arm64"]
-    libname = "unirapui"
 }
-
-preBuild.dependsOn 'cargoBuild'
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
