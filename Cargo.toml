@@ -6,6 +6,12 @@ edition = "2018"
 
 [dependencies]
 jni = "*"
+tokio = { version = "*", features = ["full"] }
+warp = { version = "*", features = ["tls"] }
+log = "*"
+
+[target.'cfg(target_os = "android")'.dependencies]
+android_logger = "*"
 
 [lib]
 crate-type = ["cdylib"]
