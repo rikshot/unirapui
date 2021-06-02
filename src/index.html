@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Unirapui</title>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <h1 id="http"></h1>
+    <h1 id="native"></h1>
+    <script defer>
+        window.addEventListener('DOMContentLoaded', async () => {
+            const ws = new WebSocket("wss://127.0.0.1:8000/ws");
+            await (new Promise((resolve) => {
+                ws.addEventListener("open", () => {
+                    resolve();
+                });
+            }));
+            const send = async (message) => {
+                const receiver = new Promise((resolve) => {
+                    const listener = message => {
+                        resolve(message);
+                        ws.removeEventListener("message", listener);
+                    }
+                    ws.addEventListener("message", listener);
+                });
+                ws.send(message);
+                return (await receiver).data;
+            };
+
+            const fetchHttp = async () => {
+                const greeting = await send("http");
+                document.getElementById("http").textContent = greeting;
+            };
+            const fetchNative = async () => {
+                const greeting = native.hello("native");
+                document.getElementById("native").textContent = greeting;
+            };
+
+            const measure = async (func, times) => {
+                let average = 0;
+                for (let i = 0; i < times; ++i) {
+                    let start = performance.now();
+                    await func();
+                    let end = performance.now();
+                    average += end - start;
+                }
+                return (average / times).toPrecision(4);
+            };
+
+            const times = 25000;
+
+            const httpAverage = await measure(fetchHttp, times);
+            const nativeAverage = await measure(fetchNative, times);
+
+            console.log(`HTTP Average: ${httpAverage}ms over ${times} messages`);
+            console.log(`Native Average: ${nativeAverage}ms over ${times} messages`);
+        });
+    </script>
+</body>
+
+</html>

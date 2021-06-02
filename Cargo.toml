@@ -9,9 +9,16 @@ jni = "*"
 tokio = { version = "*", features = ["full"] }
 warp = { version = "*", features = ["tls"] }
 log = "*"
+futures = "*"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "*"
 
 [lib]
 crate-type = ["cdylib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+opt-level = 3

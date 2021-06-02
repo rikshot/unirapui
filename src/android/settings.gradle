@@ -1,0 +1,3 @@
+rootProject.name = "Unirapui"
+include ':app'
+include ':lib'
