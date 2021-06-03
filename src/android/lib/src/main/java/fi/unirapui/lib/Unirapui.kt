@@ -3,6 +3,7 @@ package fi.unirapui.lib
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.AssetManager
+import android.net.Uri
 import android.net.http.SslError
 import android.util.Base64
 import android.webkit.*
@@ -48,7 +49,14 @@ class Unirapui {
         private external fun start(index: String, port: Int)
 
         @JvmStatic
-        private external fun greeting(name: String): String
+        private external fun echo(data: String?): String
+
+        private class JavascriptInterface {
+            @android.webkit.JavascriptInterface
+            fun echo(data: String): String {
+                return Companion.echo(data)
+            }
+        }
 
         @SuppressLint("SetJavaScriptEnabled")
         fun create(applicationContext: Context, port: UShort): WebView {
@@ -58,13 +66,6 @@ class Unirapui {
             indexInputStream.close()
 
             start(index, port.toInt())
-
-            class JavascriptInterface {
-                @android.webkit.JavascriptInterface
-                fun hello(name: String): String {
-                    return greeting(name)
-                }
-            }
 
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
             val webView = WebView(applicationContext)
@@ -76,6 +77,17 @@ class Unirapui {
             val clientCertificate = getCertificate(applicationContext, R.raw.client_certificate)
 
             webView.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    val (local, remote) = webView.createWebMessageChannel()
+                    local.setWebMessageCallback(object : WebMessagePort.WebMessageCallback() {
+                        override fun onMessage(port: WebMessagePort?, message: WebMessage?) {
+                            local.postMessage(WebMessage(echo(message?.data)))
+                        }
+                    })
+                    webView.postWebMessage(WebMessage(null, arrayOf(remote)), Uri.parse("https://127.0.0.1:$port"))
+                }
+
                 override fun onReceivedSslError(
                     view: WebView?,
                     handler: SslErrorHandler?,

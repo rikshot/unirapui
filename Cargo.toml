@@ -5,13 +5,13 @@ authors = ["Ville Orkas <ville@orkas.fi>"]
 edition = "2018"
 
 [dependencies]
-jni = "*"
 tokio = { version = "*", features = ["full"] }
 warp = { version = "*", features = ["tls"] }
 log = "*"
 futures = "*"
 
 [target.'cfg(target_os = "android")'.dependencies]
+jni = "*"
 android_logger = "*"
 
 [lib]

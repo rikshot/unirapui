@@ -7,17 +7,21 @@
 </head>
 
 <body>
-    <h1 id="http"></h1>
-    <h1 id="native"></h1>
     <script defer>
+        let port;
+        window.addEventListener("message", message => {
+            port = message.ports[0];
+            port.start();
+        });
         window.addEventListener('DOMContentLoaded', async () => {
             const ws = new WebSocket("wss://127.0.0.1:8000/ws");
+            ws.binaryType = "arraybuffer";
             await (new Promise((resolve) => {
                 ws.addEventListener("open", () => {
                     resolve();
                 });
             }));
-            const send = async (message) => {
+            const sendWs = async (message) => {
                 const receiver = new Promise((resolve) => {
                     const listener = message => {
                         resolve(message);
@@ -29,33 +33,96 @@
                 return (await receiver).data;
             };
 
-            const fetchHttp = async () => {
-                const greeting = await send("http");
-                document.getElementById("http").textContent = greeting;
-            };
-            const fetchNative = async () => {
-                const greeting = native.hello("native");
-                document.getElementById("native").textContent = greeting;
+            const wsElement = document.getElementById("ws");
+            const httpElement = document.getElementById("http");
+            const nativeElement = document.getElementById("native");
+
+            const fetchWs = async (message, binary) => {
+                return await sendWs(message);
             };
 
-            const measure = async (func, times) => {
+            const fetchHttp = async (message, binary) => {
+                if (binary) {
+                    return await fetch("https://127.0.0.1:8000/hello", {
+                        method: "POST",
+                        body: message
+                    }).then(response => response.arrayBuffer());
+                } else {
+                    return await fetch(`https://127.0.0.1:8000/hello/${message}`).then(response => response.text());
+                }
+            }
+
+            const arrayBufferToBase64 = async (arrayBuffer) => {
+                const blob = new Blob([arrayBuffer]);
+                const fileReader = new FileReader();
+                const result = new Promise((resolve) => {
+                    fileReader.addEventListener("loadend", event => resolve(event.target.result));
+                });
+                fileReader.readAsDataURL(blob);
+                return (await result).split(",")[1];
+            };
+
+            const base64ToArrayBuffer = async (base64) => {
+                return await fetch(`data:application/octet-binary;base64,${base64}`).then(response => response.arrayBuffer());
+            };
+
+            const fetchNative = async (message, binary) => {
+                if (binary) {
+                    message = await arrayBufferToBase64(message);
+                }
+                let data = native.echo(message);
+                if (binary) {
+                    data = await base64ToArrayBuffer(data);
+                }
+                return data;
+            };
+
+            const fetchPort = async (message, binary) => {
+                const send = new Promise((resolve) => {
+                    const listener = message => {
+                        resolve(message);
+                        port.removeEventListener("message", listener);
+                    };
+                    port.addEventListener("message", listener);
+                });
+                port.postMessage(binary ? await arrayBufferToBase64(message) : message);
+                let data = (await send).data;
+                if (binary) {
+                    data = await base64ToArrayBuffer(data);
+                }
+                return data;
+            };
+
+            const bufferEqual = (a, b) => {
+                a = new Uint8Array(a);
+                b = new Uint8Array(b);
+                return a.length === b.length && a.every((v, i) => v === b[i]);
+            };
+
+            const measure = async (func, message, binary, times) => {
                 let average = 0;
                 for (let i = 0; i < times; ++i) {
-                    let start = performance.now();
-                    await func();
-                    let end = performance.now();
+                    const start = performance.now();
+                    const result = await func(message, binary);
+                    const end = performance.now();
+                    console.assert(binary ? bufferEqual(message, result) : message === result, { message, result });
                     average += end - start;
                 }
                 return (average / times).toPrecision(4);
             };
 
-            const times = 25000;
+            const text = "text".repeat(1000);
+            const size = 1024 * 10;
+            const binary = new Uint8Array(size).map(value => Math.random() * 256);
+            const times = 5000;
 
-            const httpAverage = await measure(fetchHttp, times);
-            const nativeAverage = await measure(fetchNative, times);
-
-            console.log(`HTTP Average: ${httpAverage}ms over ${times} messages`);
-            console.log(`Native Average: ${nativeAverage}ms over ${times} messages`);
+            const methods = [fetchWs, fetchHttp, fetchNative, fetchPort];
+            for (const method of methods) {
+                const textAverage = await measure(method, text, false, times);
+                console.log(`${method.name} text average: ${textAverage}ms over ${times} messages of ${text.length} characters`);
+                const binaryAverage = await measure(method, binary, true, times);
+                console.log(`${method.name} binary average: ${binaryAverage}ms over ${times} messages of ${size / 1024}kB`);
+            }
         });
     </script>
 </body>
