@@ -2,7 +2,6 @@ package fi.unirapui.lib
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.AssetManager
 import android.net.Uri
 import android.net.http.SslError
 import android.util.Base64
@@ -42,7 +41,7 @@ fun getClientKey(applicationContext: Context): RSAPrivateKey {
 class Unirapui {
     companion object {
         init {
-            System.loadLibrary("unirapui");
+            System.loadLibrary("unirapui")
         }
 
         @JvmStatic
