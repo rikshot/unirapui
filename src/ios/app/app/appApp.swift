@@ -12,7 +12,7 @@ import Unirapui
 
 @main
 struct appApp: App {
-    
+
     var body: some Scene {
         WindowGroup {
             try? Unirapui.create(port: 8000)

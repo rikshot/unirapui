@@ -14,7 +14,7 @@
             port.start();
         });
         window.addEventListener('DOMContentLoaded', async () => {
-            const ws = new WebSocket("wss://127.0.0.1:8000/ws");
+            /*const ws = new WebSocket("wss://127.0.0.1:8000/ws");
             ws.binaryType = "arraybuffer";
             await (new Promise((resolve) => {
                 ws.addEventListener("open", () => {
@@ -35,7 +35,7 @@
 
             const fetchWs = async (message, binary) => {
                 return await sendWs(message);
-            };
+            };*/
 
             const fetchHttp = async (message, binary) => {
                 if (binary) {
@@ -66,7 +66,7 @@
                 if (binary) {
                     message = await arrayBufferToBase64(message);
                 }
-                let data = native.echo(message);
+                let data = typeof native !== "undefined" ? native.echo(message) : await window.webkit.messageHandlers.native.postMessage(message);
                 if (binary) {
                     data = await base64ToArrayBuffer(data);
                 }
@@ -108,11 +108,11 @@
             };
 
             const text = "text".repeat(1000);
-            const size = 1024 * 10;
+            const size = 1024 * 1024;
             const binary = new Uint8Array(size).map(value => Math.random() * 256);
             const times = 5000;
 
-            const methods = [fetchWs, fetchHttp, fetchNative, fetchPort];
+            const methods = [/*fetchWs, */fetchHttp, fetchNative/*, fetchPort*/];
             for (const method of methods) {
                 const textAverage = await measure(method, text, false, times);
                 console.log(`${method.name} text average: ${textAverage}ms over ${times} messages of ${text.length} characters`);
