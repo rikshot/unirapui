@@ -3,6 +3,7 @@ name = "unirapui"
 version = "0.1.0"
 authors = ["Ville Orkas <ville@orkas.fi>"]
 edition = "2018"
+build = "src/build.rs"
 
 [dependencies]
 tokio = { version = "*", features = ["full"] }
@@ -10,12 +11,18 @@ warp = { version = "*", features = ["tls"] }
 log = "*"
 futures = "*"
 
+[build-dependencies]
+cbindgen = "*"
+
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "*"
 android_logger = "*"
 
+[target.'cfg(target_os = "ios")'.dependencies]
+env_logger = "*"
+
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "staticlib"]
 
 [profile.release]
 lto = "fat"

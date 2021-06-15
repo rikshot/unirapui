@@ -33,10 +33,6 @@
                 return (await receiver).data;
             };
 
-            const wsElement = document.getElementById("ws");
-            const httpElement = document.getElementById("http");
-            const nativeElement = document.getElementById("native");
-
             const fetchWs = async (message, binary) => {
                 return await sendWs(message);
             };

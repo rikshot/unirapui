@@ -17,5 +17,8 @@ openssl genrsa -out client.key
 openssl req -new -sha256 -key client.key -out client.csr -subj "/C=FI/ST=Uusimaa/L=Vantaa/O=Unirapui/OU=Client/CN=127.0.0.1/emailAddress=ville@orkas.fi"
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365 -sha256 -extfile client.cnf
 
+# Generate PKCS12 key for iOS
+openssl pkcs12 -inkey client.key -in client.crt -out client.p12 -export -passout pass:
+
 # Cleanup
 rm ca.srl client.csr server.csr
